@@ -1,0 +1,35 @@
+name: Deploy website
+
+on:
+  push:
+    branches:
+      - source
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Repo
+        uses: actions/checkout@v2
+      - name: Cache Node Modules
+        uses: actions/cache@v1
+        with:
+          path: node_modules
+          key: ${{runner.OS}}-${{hashFiles('**/package-lock.json')}}
+      - name: Get NodeJS
+        uses: actions/setup-node@v1.1.0
+      - name: Install Dependencies
+        run: npm install
+      - name: Compile Project
+        run: npm run build
+      - name: Deploy website
+        run: |
+          mkdir -p $HOME/.ssh/
+          echo "${DEPLOY_KEY}" > $HOME/.ssh/id_rsa
+          chmod 600 $HOME/.ssh/id_rsa
+          ssh-keyscan -t rsa github.com >> $HOME/.ssh/known_hosts
+          git config --global user.email "rubens.m.gomes@hotmail.com"
+          git config --global user.name "rubensmg"
+          npm run deploy
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
